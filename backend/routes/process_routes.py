@@ -1,22 +1,12 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from backend.services.nlp_service import extract_action_items
+from backend.services.transcribe_service import transcribe_audio
 
-router = APIRouter(prefix="/process", tags=["NLP Processing"])
+router = APIRouter()
 
-
-class TranscriptRequest(BaseModel):
-    transcript: str
-
-
-@router.post("/action-items")
-def process_transcript(data: TranscriptRequest):
-    if not data.transcript.strip():
-        raise HTTPException(status_code=400, detail="Transcript is empty")
-
-    action_items = extract_action_items(data.transcript)
-
-    return {
-        "total_action_items": len(action_items),
-        "action_items": action_items
-    }
+@router.post("/")
+def process_meeting(file_path: str):
+    try:
+        transcript = transcribe_audio(file_path)
+        return {"transcript": transcript}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
