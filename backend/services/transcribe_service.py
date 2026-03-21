@@ -1,11 +1,13 @@
 import whisper
 import os
 
-# Load model once (important)
-model = whisper.load_model("base")  
-# Options: tiny, base, small, medium, large
+model = None
 
 def transcribe_audio(file_path: str) -> str:
+    global model
+    if model is None:
+        model = whisper.load_model("base")  # Load model on first use
+    
     if not file_path or not os.path.exists(file_path):
         raise ValueError("Invalid or missing audio file")
 

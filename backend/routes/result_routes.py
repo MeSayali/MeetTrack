@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from database import SessionLocal
-from models import Result, Meeting
-from schemas.result_schema import ResultCreate, ResultResponse
-from services.notification_service import send_email_notification
+from backend.app.database import SessionLocal
+from backend.models.result import Result
+from backend.models.meeting import Meeting
+from backend.schemas.result_schema import ResultCreate, ResultResponse
+from backend.services.notification_service import send_email_notification
 
 router = APIRouter(
     prefix="/results",
