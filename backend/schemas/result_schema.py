@@ -15,4 +15,4 @@ class ResultResponse(BaseModel):
     key_points: Optional[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
