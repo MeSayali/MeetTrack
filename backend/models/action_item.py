@@ -14,8 +14,10 @@ class ActionItem(Base):
     deadline = Column(String, nullable=True)
     status = Column(String(50), default="Pending")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    text = Column(Text, nullable=True)
     
     meeting = relationship("Meeting", back_populates="action_items")
+
+
 
 
