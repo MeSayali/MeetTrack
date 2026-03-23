@@ -13,11 +13,11 @@ sns = boto3.client(
 )
 
 def send_email_notification(message):
-    """Publishes meeting results to the configured SNS Topic""" [cite: 2026-02-12]
+    """Publishes meeting results to the configured SNS Topic""" 
     topic_arn = os.getenv("SNS_TOPIC_ARN")
     
     if not topic_arn:
-        print("Error: SNS_TOPIC_ARN not found in environment.") [cite: 2026-02-12]
+        print("Error: SNS_TOPIC_ARN not found in environment.") #[cite: 2026-02-12]
         return None
 
     response = sns.publish(

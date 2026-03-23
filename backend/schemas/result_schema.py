@@ -16,3 +16,12 @@ class ResultResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class SummaryResponse(BaseModel):
+    meeting_id: int
+    summary: str
+
+class SummaryApproval(BaseModel):
+    meeting_id: int
+    approved: bool
