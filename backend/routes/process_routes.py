@@ -1,19 +1,18 @@
 import os
 from fastapi import APIRouter, HTTPException, Depends
-from backend.models.result import Result
 from sqlalchemy.orm import Session
 
-from backend.services.summary_service import generate_summary
-from backend.services.transcribe_service import transcribe_audio
-from backend.services.nlp_service import extract_action_items
-from backend.app.database import SessionLocal
+from backend.models.result import Result
 from backend.models.meeting import Meeting
 from backend.models.action_item import ActionItem
-from backend.app.auth import get_current_user
 from backend.schemas.result_schema import SummaryApproval
+from backend.services.transcribe_service import transcribe_audio
+from backend.services.nlp_service import extract_action_items
+from backend.services.summary_service import generate_summary
+from backend.app.database import SessionLocal
+from backend.app.auth import get_current_user
 
 router = APIRouter()
-
 
 # Dependency to get DB session
 def get_db():
@@ -23,7 +22,9 @@ def get_db():
     finally:
         db.close()
 
-
+# -------------------------------
+# Process Meeting Endpoint
+# -------------------------------
 @router.post("/")
 def process_meeting(
     file_path: str,
@@ -62,6 +63,7 @@ def process_meeting(
         db.commit()
 
         return {
+            "status": "success",
             "meeting_id": new_meeting.id,
             "transcript": transcript,
             "action_items": action_items
@@ -69,25 +71,27 @@ def process_meeting(
 
     except Exception as e:
         print("🔥 ERROR:", e)
-        raise HTTPException(status_code=500, detail=str(e))
-    
+        return {
+            "status": "error",
+            "message": str(e)
+        }
 
+# -------------------------------
+# Generate Summary Endpoint
+# -------------------------------
 @router.post("/generate-summary/{meeting_id}")
 def generate_summary_api(meeting_id: int, db: Session = Depends(get_db)):
-
     result = db.query(Result).filter(Result.meeting_id == meeting_id).first()
     
-
     # ✅ create if not exists
     if not result:
         meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
-
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
-
+        
         result = Result(
             meeting_id=meeting_id,
-            transcript=meeting.transcript   # ✅ FIXED
+            transcript=meeting.transcript
         )
         db.add(result)
         db.commit()
@@ -97,7 +101,6 @@ def generate_summary_api(meeting_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Transcript missing")
 
     summary = generate_summary(result.transcript)
-
     result.summary = summary
     db.commit()
 
@@ -105,9 +108,12 @@ def generate_summary_api(meeting_id: int, db: Session = Depends(get_db)):
         "meeting_id": meeting_id,
         "summary": summary
     }
+
+# -------------------------------
+# Approve Summary Endpoint
+# -------------------------------
 @router.post("/approve-summary")
 def approve_summary(data: SummaryApproval, db: Session = Depends(get_db)):
-
     result = db.query(Result).filter(Result.meeting_id == data.meeting_id).first()
 
     if not result:
@@ -121,4 +127,3 @@ def approve_summary(data: SummaryApproval, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Summary updated"}
-

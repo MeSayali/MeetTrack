@@ -4,15 +4,10 @@ from jose import JWTError, jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from backend.app.database import SessionLocal
+from backend.app.settings import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 from backend.models.user import User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
-
-
-# 🔐 Step 2.1: Create your own secret key
-SECRET_KEY = "supersecretkey123"   # you can change anything
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
 # ✅ Create Token

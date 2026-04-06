@@ -10,11 +10,12 @@ class ActionItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     meeting_id = Column(Integer, ForeignKey("meetings.id", ondelete="CASCADE"))
     
+    title = Column(String(255), nullable=True)
+    description = Column(Text, nullable=True)
     assigned_to = Column(String(255))
     deadline = Column(String, nullable=True)
     status = Column(String(50), default="Pending")
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-    text = Column(Text, nullable=True)
     
     meeting = relationship("Meeting", back_populates="action_items")
 

@@ -1,18 +1,21 @@
-from google import genai
 import os
+from google import genai
+
 
 def generate_summary(transcript: str) -> str:
     try:
         if not transcript:
             return "No transcript available"
 
+        # ✅ Create client
         client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
-        # reduce token usage (IMPORTANT for quota)
+        # Reduce token usage
         short_text = transcript[:3000]
 
+        # ✅ Generate summary
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-1.5-flash",
             contents=f"""
             Summarize this meeting in simple points:
 
@@ -30,6 +33,6 @@ def generate_summary(transcript: str) -> str:
     except Exception as e:
         print("🔥 GEMINI ERROR:", e)
 
-        # ✅ fallback (VERY IMPORTANT)
+        # fallback
         sentences = transcript.split(".")
         return " ".join(sentences[:2]) + "."
