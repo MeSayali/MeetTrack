@@ -66,16 +66,28 @@ def root():
 @app.get("/meetings")
 def get_all_meetings(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     from backend.models.meeting import Meeting
-    meetings = db.query(Meeting).filter(Meeting.user_id == current_user.id).all()
-    return [
-        {
+    from backend.app.database import SessionLocal
+    
+    meetings = db.query(Meeting).filter(Meeting.user_id == current_user.id).order_by(Meeting.created_at.desc()).all()
+    
+    meeting_list = []
+    for m in meetings:
+        # Count action items
+        action_item_count = len(m.action_items) if m.action_items else 0
+        
+        meeting_list.append({
             "id": m.id,
             "title": m.title,
+            "date": m.created_at.isoformat() if m.created_at else None,
+            "participants": m.participants or 0,
+            "duration": m.duration or 0,
+            "status": m.status or "Pending Review",
+            "summary": m.summary or "No summary available",
+            "action_items": action_item_count,
             "audio_path": m.audio_path,
-            "created_at": m.created_at
-        }
-        for m in meetings
-    ]
+        })
+    
+    return meeting_list
 
 
 # ✅ REGISTER
@@ -227,6 +239,47 @@ async def upload_profile_image(
         }
     except Exception as e:
         print(f"❌ Image upload failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="Image upload failed")
+
+
+# ✅ CONTACT MESSAGE ENDPOINT
+@app.post("/contact")
+def save_contact_message(
+    full_name: str,
+    email: str,
+    message: str,
+    db: Session = Depends(get_db)
+):
+    """Save contact form message to database"""
+    try:
+        from backend.models.contact_message import ContactMessage
+        
+        # Validate required fields
+        if not full_name or not email or not message:
+            raise HTTPException(status_code=400, detail="All fields are required")
+        
+        # Create contact message
+        contact_msg = ContactMessage(
+            full_name=full_name,
+            email=email,
+            message=message,
+            status="New"
+        )
+        
+        db.add(contact_msg)
+        db.commit()
+        db.refresh(contact_msg)
+        
+        print(f"✅ Contact message saved from {email}")
+        
+        return {
+            "status": "success",
+            "message": "Your message has been submitted successfully. We'll get back to you soon!",
+            "contact_id": contact_msg.id
+        }
+    except Exception as e:
+        print(f"❌ Failed to save contact message: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to save message")
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 

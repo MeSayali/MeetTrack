@@ -1,5 +1,5 @@
 import os
-from google import genai
+import google.generativeai as genai
 
 
 def generate_summary(transcript: str) -> str:
@@ -7,16 +7,15 @@ def generate_summary(transcript: str) -> str:
         if not transcript:
             return "No transcript available"
 
-        # ✅ Create client
-        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+        # ✅ Configure genai
+        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        model = genai.GenerativeModel("gemini-1.5-flash")
 
         # Reduce token usage
         short_text = transcript[:3000]
 
         # ✅ Generate summary
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=f"""
+        response = model.generate_content(f"""
             Summarize this meeting in simple points:
 
             - Key Points
@@ -25,8 +24,7 @@ def generate_summary(transcript: str) -> str:
 
             Transcript:
             {short_text}
-            """
-        )
+            """)
 
         return response.text
 

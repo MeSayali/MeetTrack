@@ -1,5 +1,5 @@
 import { motion as Motion } from "framer-motion";
-import { Mail, MapPin, Phone } from "lucide-react";
+import { Mail, MapPin, Phone, Check, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { buttonHoverProps, fadeInProps, subtle } from "../lib/motionPresets";
 
@@ -13,7 +13,67 @@ const surface =
   "rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm shadow-slate-200/50 dark:border-slate-700/80 dark:bg-slate-900/60 dark:shadow-lg dark:shadow-black/30";
 
 export default function ContactPage() {
-  const [sent, setSent] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    message: "",
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!formData.fullName || !formData.email || !formData.message) {
+      setErrorMessage("Please fill in all fields");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch("http://127.0.0.1:8000/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: formData.fullName,
+          email: formData.email,
+          message: formData.message,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSuccessMessage(data.message);
+        setFormData({
+          fullName: "",
+          email: "",
+          message: "",
+        });
+      } else {
+        const error = await response.json();
+        setErrorMessage(error.detail || "Failed to submit message");
+      }
+    } catch (err) {
+      console.error("Error submitting form:", err);
+      setErrorMessage("Failed to submit form. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <Motion.div className="space-y-8" {...fadeInProps}>
@@ -43,11 +103,31 @@ export default function ContactPage() {
           );
         })}
       </section>
+      
+      {successMessage && (
+        <Motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-900/50 p-4 flex items-center gap-3 text-emerald-700 dark:text-emerald-300"
+        >
+          <Check className="h-5 w-5" />
+          {successMessage}
+        </Motion.div>
+      )}
+
+      {errorMessage && (
+        <Motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-900/50 p-4 flex items-center gap-3 text-red-700 dark:text-red-300"
+        >
+          <AlertCircle className="h-5 w-5" />
+          {errorMessage}
+        </Motion.div>
+      )}
+
       <Motion.form
-        onSubmit={(event) => {
-          event.preventDefault();
-          setSent(true);
-        }}
+        onSubmit={handleSubmit}
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...subtle, delay: 0.12 }}
@@ -55,25 +135,39 @@ export default function ContactPage() {
       >
         <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Send us a message</h2>
         <input
+          type="text"
+          name="fullName"
+          value={formData.fullName}
+          onChange={handleChange}
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           placeholder="Full name"
+          disabled={isSubmitting}
         />
         <input
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
           className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           placeholder="Email address"
+          disabled={isSubmitting}
         />
         <textarea
+          name="message"
+          value={formData.message}
+          onChange={handleChange}
           className="min-h-28 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
           placeholder="How can we help?"
+          disabled={isSubmitting}
         />
         <Motion.button
           type="submit"
-          className="rounded-xl bg-violet-600 px-4 py-2 font-semibold text-white shadow-sm shadow-violet-600/25 dark:shadow-violet-900/40"
+          disabled={isSubmitting}
+          className="rounded-xl bg-violet-600 px-4 py-2 font-semibold text-white shadow-sm shadow-violet-600/25 dark:shadow-violet-900/40 disabled:opacity-50 disabled:cursor-not-allowed"
           {...buttonHoverProps}
         >
-          Submit
+          {isSubmitting ? "Submitting..." : "Submit"}
         </Motion.button>
-        {sent && <p className="text-sm text-emerald-700 dark:text-emerald-400">Message submitted. We will get back shortly.</p>}
       </Motion.form>
       <p className="text-sm text-slate-600 dark:text-slate-400">
         Explore docs:{" "}
