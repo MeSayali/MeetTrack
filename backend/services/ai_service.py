@@ -103,7 +103,19 @@ Return ONLY the JSON array, no other text:
                         task["email"] = None
 
             print(f"✅ Task extraction complete: {len(tasks)} tasks extracted")
-            return tasks
+            
+            # ✅ Normalize output format for n8n
+            formatted_tasks = []
+            for task in tasks:
+                formatted_tasks.append({
+                    "name": task.get("person_name"),
+                    "email": task.get("email"),
+                    "task": task.get("task_description"),
+                    "deadline": task.get("deadline")
+                })
+            
+            print(f"✅ Formatted {len(formatted_tasks)} tasks for n8n")
+            return formatted_tasks
 
         except json.JSONDecodeError as e:
             logger.error(f"JSON parsing failed: {e}")
@@ -114,4 +126,130 @@ Return ONLY the JSON array, no other text:
     except Exception as e:
         logger.error(f"Task extraction error: {str(e)}")
         print(f"❌ Task extraction error: {str(e)}")
+        return [{"error": f"Extraction failed: {str(e)}"}]
+
+
+def extract_tasks_from_action_items(action_items: list) -> list:
+    """
+    Convert existing action items to task format for n8n
+    
+    Args:
+        action_items: List of action item dictionaries with keys:
+                     - assigned_to (or title/description for name extraction)
+                     - description (or title for task description)
+                     - deadline
+                     - Any other metadata
+    
+    Returns:
+        list: Array of task objects with person_name, email, task_description, deadline
+    """
+    try:
+        print(f"🔄 Converting {len(action_items)} action items to tasks")
+        
+        tasks = []
+        for item in action_items:
+            # Extract person name from assigned_to field
+            person_name = item.get("assigned_to", "").strip()
+            if not person_name:
+                person_name = item.get("assigned_by", "").strip()
+            if not person_name:
+                person_name = "Unassigned"
+            
+            # Extract task description from description or title
+            task_description = item.get("description", "").strip()
+            if not task_description:
+                task_description = item.get("title", "").strip()
+            
+            # Skip if no description
+            if not task_description:
+                logger.warning(f"Skipping action item without description: {item}")
+                continue
+            
+            # Extract email from assigned_to if it contains email format
+            email = None
+            if "@" in person_name:
+                email = person_name
+                # Try to extract name before email (e.g., "John john@example.com")
+                email_match = re.search(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", person_name)
+                if email_match:
+                    email = email_match.group(0)
+                    person_name = person_name.replace(email, "").strip() or "Unassigned"
+            
+            # Validate email format
+            if email and not re.match(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", email):
+                email = None
+            
+            # Extract deadline
+            deadline = item.get("deadline")
+            if deadline:
+                # Ensure YYYY-MM-DD format
+                if isinstance(deadline, str):
+                    # Try to parse and reformat if needed
+                    try:
+                        from datetime import datetime
+                        parsed_date = datetime.fromisoformat(deadline.split("T")[0])
+                        deadline = parsed_date.strftime("%Y-%m-%d")
+                    except:
+                        deadline = deadline.split("T")[0] if "T" in deadline else deadline
+            
+            task = {
+                "name": person_name,
+                "email": email,
+                "task": task_description,
+                "deadline": deadline,
+                "status": item.get("status", "pending")
+            }
+            
+            tasks.append(task)
+            print(f"  ✓ Converted: {person_name} - {task_description[:40]}...")
+        
+        print(f"✅ Action item conversion complete: {len(tasks)} tasks created")
+        return tasks
+        
+    except Exception as e:
+        logger.error(f"Action item extraction error: {str(e)}")
+        print(f"❌ Action item extraction error: {str(e)}")
+        return [{"error": f"Conversion failed: {str(e)}"}]
+
+
+def extract_tasks_unified(
+    source: str,
+    content: dict
+) -> list:
+    """
+    Unified function to extract tasks from different sources (transcript or action_items)
+    
+    Args:
+        source: 'transcript' or 'action_items'
+        content: Dictionary containing either:
+                - meeting_text: str (for transcript source)
+                - action_items: list (for action_items source)
+    
+    Returns:
+        list: Array of extracted task objects
+    """
+    try:
+        print(f"🔀 Starting unified extraction from source: {source}")
+        
+        if source.lower() == "transcript" or source.lower() == "meeting_text":
+            meeting_text = content.get("meeting_text") or content.get("text", "")
+            if not meeting_text:
+                logger.warning("No meeting text provided")
+                return []
+            return extract_tasks(meeting_text)
+        
+        elif source.lower() == "action_items":
+            action_items = content.get("action_items", [])
+            if not action_items:
+                logger.warning("No action items provided")
+                return []
+            return extract_tasks_from_action_items(action_items)
+        
+        else:
+            logger.error(f"Unknown source: {source}")
+            return [{"error": f"Unknown source: {source}"}]
+            
+    except Exception as e:
+        logger.error(f"Unified extraction error: {str(e)}")
+        print(f"❌ Unified extraction error: {str(e)}")
         return [{"error": f"Extraction failed: {str(e)}"}]

@@ -35,22 +35,27 @@ def process_meeting(
         # 1️⃣ Transcribe Audio
         transcript = transcribe_audio(file_path)
 
-        # 2️⃣ Save Meeting
+        # 2️⃣ Generate Summary
+        print("📝 Generating summary...")
+        summary = generate_summary(transcript)
+
+        # 3️⃣ Save Meeting with Summary
         new_meeting = Meeting(
             user_id=current_user.id,
             title="Untitled Meeting",
             audio_path=file_path,
-            transcript=transcript
+            transcript=transcript,
+            summary=summary
         )
 
         db.add(new_meeting)
         db.commit()
         db.refresh(new_meeting)
 
-        # 3️⃣ Extract Action Items
+        # 4️⃣ Extract Action Items
         action_items = extract_action_items(transcript)
 
-        # 4️⃣ Save Action Items
+        # 5️⃣ Save Action Items
         for item in action_items:
             action = ActionItem(
                 meeting_id=new_meeting.id,
@@ -66,6 +71,7 @@ def process_meeting(
             "status": "success",
             "meeting_id": new_meeting.id,
             "transcript": transcript,
+            "summary": summary,
             "action_items": action_items
         }
 
@@ -127,3 +133,4 @@ def approve_summary(data: SummaryApproval, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Summary updated"}
+    

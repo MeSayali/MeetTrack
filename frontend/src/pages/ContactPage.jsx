@@ -3,12 +3,6 @@ import { Mail, MapPin, Phone, Check, AlertCircle } from "lucide-react";
 import { useState } from "react";
 import { buttonHoverProps, fadeInProps, subtle } from "../lib/motionPresets";
 
-const cards = [
-  { icon: Mail, title: "Email", value: "support@meettrack.ai" },
-  { icon: Phone, title: "Phone", value: "+1 (555) 987-1234" },
-  { icon: MapPin, title: "Address", value: "120 Innovation Ave, Seattle, WA" },
-];
-
 const surface =
   "rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm shadow-slate-200/50 dark:border-slate-700/80 dark:bg-slate-900/60 dark:shadow-lg dark:shadow-black/30";
 
@@ -55,17 +49,19 @@ export default function ContactPage() {
         }),
       });
 
+      const data = await response.json();
+      
       if (response.ok) {
-        const data = await response.json();
-        setSuccessMessage(data.message);
+        setSuccessMessage(data.message || "Message sent successfully!");
         setFormData({
           fullName: "",
           email: "",
           message: "",
         });
+        // Clear success message after 5 seconds
+        setTimeout(() => setSuccessMessage(""), 5000);
       } else {
-        const error = await response.json();
-        setErrorMessage(error.detail || "Failed to submit message");
+        setErrorMessage(data.detail || "Failed to submit message");
       }
     } catch (err) {
       console.error("Error submitting form:", err);
@@ -85,23 +81,44 @@ export default function ContactPage() {
       >
         Contact MeetTrack
       </Motion.h1>
+      
       <section className="grid gap-4 md:grid-cols-3">
-        {cards.map((card, index) => {
-          const Icon = card.icon;
-          return (
-            <Motion.article
-              key={card.title}
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ ...subtle, delay: 0.05 + index * 0.06 }}
-              className={surface}
-            >
-              <Icon className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-              <h3 className="mt-2 font-semibold text-slate-900 dark:text-slate-100">{card.title}</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">{card.value}</p>
-            </Motion.article>
-          );
-        })}
+        {/* Email Card - Clickable */}
+        <Motion.a
+          href="mailto:meettrack.ai@gmail.com"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...subtle, delay: 0.05 }}
+          className={`${surface} cursor-pointer transition-all hover:shadow-md hover:shadow-violet-300/40 dark:hover:shadow-violet-900/40`}
+        >
+          <Mail className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+          <h3 className="mt-2 font-semibold text-slate-900 dark:text-slate-100">Email</h3>
+          <p className="text-sm text-violet-600 dark:text-violet-400 hover:underline">meettrack.ai@gmail.com</p>
+        </Motion.a>
+
+        {/* Phone Card */}
+        <Motion.article
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...subtle, delay: 0.1 }}
+          className={surface}
+        >
+          <Phone className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+          <h3 className="mt-2 font-semibold text-slate-900 dark:text-slate-100">Phone</h3>
+          <p className="text-sm text-slate-600 dark:text-slate-400">+1 (555) 987-1234</p>
+        </Motion.article>
+
+        {/* Address Card */}
+        <Motion.article
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ ...subtle, delay: 0.15 }}
+          className={surface}
+        >
+          <MapPin className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+          <h3 className="mt-2 font-semibold text-slate-900 dark:text-slate-100">Address</h3>
+          <p className="text-sm text-slate-600 dark:text-slate-400">PICT,Pune</p>
+        </Motion.article>
       </section>
       
       {successMessage && (

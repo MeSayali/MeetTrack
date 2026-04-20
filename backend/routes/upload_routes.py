@@ -121,6 +121,12 @@ async def process_meeting(
         try:
             summary = generate_summary(transcript)
             print(f"✅ Summary generated: {len(summary)} characters")
+            
+            # 🔥 SAVE SUMMARY TO MEETING
+            new_meeting.summary = summary
+            db.commit()
+            db.refresh(new_meeting)
+            print(f"✅ Summary saved to meeting record")
         except Exception as e:
             print(f"⚠️  Summary generation failed: {e}")
             summary = "Summary generation failed. Please check your API key."

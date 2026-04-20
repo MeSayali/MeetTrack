@@ -17,6 +17,7 @@ from backend.app.settings import CORS_ORIGINS
 
 # Import models (important)
 from backend.models import user, meeting, action_item, result
+from backend.models.user import User
 
 # Routes
 from backend.routes.upload_routes import router as upload_router
@@ -66,28 +67,32 @@ def root():
 @app.get("/meetings")
 def get_all_meetings(current_user=Depends(get_current_user), db: Session = Depends(get_db)):
     from backend.models.meeting import Meeting
-    from backend.app.database import SessionLocal
     
-    meetings = db.query(Meeting).filter(Meeting.user_id == current_user.id).order_by(Meeting.created_at.desc()).all()
-    
-    meeting_list = []
-    for m in meetings:
-        # Count action items
-        action_item_count = len(m.action_items) if m.action_items else 0
+    try:
+        meetings = db.query(Meeting).filter(Meeting.user_id == current_user.id).order_by(Meeting.created_at.desc()).all()
         
-        meeting_list.append({
-            "id": m.id,
-            "title": m.title,
-            "date": m.created_at.isoformat() if m.created_at else None,
-            "participants": m.participants or 0,
-            "duration": m.duration or 0,
-            "status": m.status or "Pending Review",
-            "summary": m.summary or "No summary available",
-            "action_items": action_item_count,
-            "audio_path": m.audio_path,
-        })
-    
-    return meeting_list
+        meeting_list = []
+        for m in meetings:
+            # Count action items
+            action_item_count = len(m.action_items) if m.action_items else 0
+            
+            meeting_list.append({
+                "id": m.id,
+                "title": m.title or "Untitled Meeting",
+                "date": m.created_at.isoformat() if m.created_at else None,
+                "created_at": m.created_at.isoformat() if m.created_at else None,
+                "participants": m.participants or 0,
+                "duration": m.duration or 0,
+                "status": m.status or "Pending Review",
+                "summary": m.summary or "",
+                "action_items": action_item_count,
+                "audio_path": m.audio_path,
+            })
+        
+        return meeting_list
+    except Exception as e:
+        print(f"Error fetching meetings: {e}")
+        return []
 
 
 # ✅ REGISTER
@@ -245,14 +250,17 @@ async def upload_profile_image(
 # ✅ CONTACT MESSAGE ENDPOINT
 @app.post("/contact")
 def save_contact_message(
-    full_name: str,
-    email: str,
-    message: str,
+    contact_data: dict,
     db: Session = Depends(get_db)
 ):
     """Save contact form message to database"""
     try:
         from backend.models.contact_message import ContactMessage
+        
+        # Extract data from request body
+        full_name = contact_data.get("full_name", "").strip()
+        email = contact_data.get("email", "").strip()
+        message = contact_data.get("message", "").strip()
         
         # Validate required fields
         if not full_name or not email or not message:
@@ -277,10 +285,11 @@ def save_contact_message(
             "message": "Your message has been submitted successfully. We'll get back to you soon!",
             "contact_id": contact_msg.id
         }
+    except HTTPException as e:
+        raise e
     except Exception as e:
         print(f"❌ Failed to save contact message: {str(e)}")
         raise HTTPException(status_code=500, detail="Failed to save message")
-        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 
 # ✅ GET PROFILE IMAGE (for serving images)

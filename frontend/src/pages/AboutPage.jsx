@@ -26,9 +26,11 @@ const values = [
 ];
 
 const team = [
-  { name: "Dr. Sarah Chen", role: "Chief Technology Officer", area: "AI & Machine Learning" },
-  { name: "Michael Rodriguez", role: "Head of Product", area: "UX & Product Design" },
-  { name: "Jennifer Park", role: "Lead NLP Engineer", area: "Natural Language Processing" },
+  { name: "Sayali Pawar", role: "Project Lead", area: "Backend Developer" },
+  { name: "Manish Patil", role: "Mentor", area: "Backend Developer" },
+  { name: "Riya", role: "Backend Developer", area: "Back-end Development" },
+  { name: "Sharvari Ballal", role: "Frontend Developer", area: "Frontend Development" },
+  { name: "Mrunmayee Yawale", role: "Frontend Developer", area: "Frontend Development" },
 ];
 
 const card =
@@ -99,7 +101,7 @@ export default function AboutPage() {
       <section>
         <h2 className="text-center text-5xl font-bold tracking-tight text-slate-900 dark:text-slate-100">Meet the Team</h2>
         <p className="mt-2 text-center text-slate-500 dark:text-slate-400">The experts behind MeetTrack</p>
-        <div className="mt-8 grid gap-5 md:grid-cols-3">
+        <div className="mt-8 grid gap-5 justify-center md:grid-cols-2 lg:grid-cols-3">
           {team.map((member, index) => (
             <Motion.article
               key={member.name}

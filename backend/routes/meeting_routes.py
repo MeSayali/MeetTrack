@@ -29,9 +29,11 @@ def list_meetings(
         {
             "id": m.id,
             "title": m.title,
+            "summary": m.summary,
             "audio_path": m.audio_path,
             "created_at": m.created_at,
-            "user_id": m.user_id
+            "user_id": m.user_id,
+            "action_items": len(m.action_items) if m.action_items else 0
         }
         for m in meetings
     ]
