@@ -1,7 +1,5 @@
-from pathlib import Path
-
-readme = r'''# 📅 Automated Meeting Outcome Tracker
-
+ 📅 Automated Meeting Outcome Tracker
+ https://automated-meeting-outcome-tracker.onrender.com
 A web application that processes meeting audio recordings and helps users review what happened in a meeting. It converts audio into text, extracts useful information such as action items, and makes the results available through a dashboard.
 
 ---
